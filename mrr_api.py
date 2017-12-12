@@ -11,7 +11,7 @@ import requests
 
 
 RIG_METHODS = [
-    'list'
+    'list'  
 ]
 
 class api(object):
