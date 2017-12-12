@@ -15,9 +15,9 @@ RIG_METHODS = [
 ]
 
 class api(object):
-    def __init__(self):
-        self._api_key = "2ffa0754242ab89607a986672e3f532ebd41c14c29cd6d1785c59b205ca97c13"
-        self._api_secret = "feed83a2629f09418a53433705701f68a1bce13363896d8ef24d11c91200f9b0"
+    def __init__(self, api_key, api_secret):
+        self._api_key = api_key
+        self._api_secret = api_secret
         self.uri = "https://www.miningrigrentals.com/api/v1/{}"
 
     @property
