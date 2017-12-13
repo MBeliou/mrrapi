@@ -6,10 +6,9 @@
 ================================================
 
     Python wrapper for the mining rig rental API
+    https://www.miningrigrentals.com/apidoc
 
-    .. todo :: Add remaining rigs methods
-               Add remaining account methods
-               Add remaining docstrings
+    .. todo :: Add remaining docstrings
                Write tests for connection
 '''
 
@@ -22,6 +21,21 @@ import requests
 
 RIG_METHODS = [
     'list',
+    'detail',
+    'update',
+    'rent',
+]
+
+RENTAL_METHODS = [
+    'detail'
+]
+
+ACCOUNT_METHODS = [
+    'myrigs',
+    'myrentals',
+    'balance',
+    'pools',
+    'profiles'
 ]
 
 ALGOS = [
@@ -75,52 +89,109 @@ class MrrApi(object):
     @property
     def _nonce(self):
         '''
-            :return: Returns a value of time in ms
+            :return: Returns a value of time in ms - meeting the always increasing int pre-requisite
         '''
         return '{:.10f}'.format(int(time.time()*1000))
 
     def _signature(self, post_data):
         '''
+
             :param post_data: string data to be encoded
             :return: hmac sha1 encoded hexdigest of the post_data using the api_secret as key
         '''
         sign = hmac.new(self._api_secret.encode(), post_data.encode(), digestmod=hashlib.sha1).hexdigest()
         return sign
 
-    def define_url(self, method):
+    def define_url(self, method, is_rental=False):
         '''
             Defines the url to be used
+
             :param method: rig or account method
             :return: Element to append to the uri
 
+            :Example:
+
+            define_url('myrentals', is_rental=True)
+
+            .. note :: Method uses a is_rental Boolean to differenciate rig & rental 'detail' method
             .. raises :: Raises an error if the method is not yet implemented or does not exist
         '''
         if method in RIG_METHODS:
             return "rig?method="+method
         else:
-            raise EnvironmentError('Not implemented')
+            raise NotImplementedError('Method {} is not implemented'.format(method))
 
     def _post(self, **kwargs):
+        """
+            Turns the key word arguments into a dictionnary to be used to create the url for the call
+            as well as the payload and headers
+
+            :param **kwargs: requires at least method='name of method'
+            :return: response to the request in a json format 
+
+            :Example:
+
+            _post(method='list', algo='scrypt')
+
+        """
         param = kwargs
         param.update({'nonce' : self._nonce})
-
+        try:
+            rental = param.pop('is_rental')
+        except:
+            rental = False
         params = urlencode(param)
+        
         sign = self._signature(params)
-        url = self.uri.format(self.define_url(param['method']))
+
+        url = self.uri.format(self.define_url(param['method'], rental))
 
         headers = {'x-api-key': self._api_key,
                    'x-api-sign': sign}
+
         req = requests.post(url, param, headers=headers)
         return req.json()
 
-    # -- CALLS --------------------------
+    # -- PUBLIC CALLS --------------------------
 
     def rig_list(self, algo='scrypt', **kwargs):
-        # out ['name', 'rpi', 'maxhrs', 'price_hr', 'price', 'id', 'hashrate_nice', 'rating', 'minhrs', 'hashrate', 'status'])
         return self._post(method='list', type=algo, **kwargs)
+
+    def rig_detail(self, id):
+        return self._post(method='detail', id=id)
 
     def rig_scrypt(self):
         return self._post(method='list', type='scrypt')
+
+    # -- RENTAL RELATED CALLS ---------------------------
+    def my_rigs(self):
+        return self._post(method='myrigs')
+
+    def my_rentals(self):
+        return self._post(method='myrentals')
+
+    def rental_details(self, id):
+        return self._post(method='detail', id=id, is_rental=True)
+
+    def update_rig(self, id, name=None, status=None, hashrate=None, hash_type=None, price=None, min_hours=None, max_hours=None):
+        kwargs = locals()
+
+        kwargs.pop('self')
+        kwargs = {k:v for k,v in kwargs.items() if v is not None}
+        if len(kwargs) == 1:
+            raise ValueError("This method requires id and at least 1 more argument to be used")
+        else:
+            return self._post(method='update',**kwargs)
+
+    # -- ACCOUNT RELATED CALLS --------------------------
+    def get_balance(self):
+        return self._post(method='balance')
+
+    def favorite_pools(self):
+        return self._post(method='pools')
+
+    def profiles(self):
+        return self._post(method='profiles')
 
     # -- CUSTOM CALLS -----------------------------------
     def cheapest_rig_list(self, algo='scrypt', quantity=10, **kwargs):
