@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+ #!/usr/bin/env python3
 
 
 '''
@@ -9,7 +9,9 @@
     https://www.miningrigrentals.com/apidoc
 
     .. todo :: Add remaining docstrings
-               Write tests for connection
+               Write README.md
+               Turn into a package
+               
 '''
 
 import time
@@ -118,16 +120,22 @@ class MrrApi(object):
         '''
         if method in RIG_METHODS:
             return "rig?method="+method
+
+        elif method in RENTAL_METHODS:
+            return "rental?method="+method
+
+        elif method in ACCOUNT_METHODS:
+            return "account?method="+method
+
         else:
             raise NotImplementedError('Method {} is not implemented'.format(method))
 
     def _post(self, **kwargs):
         """
-            Turns the key word arguments into a dictionnary to be used to create the url for the call
-            as well as the payload and headers
+            Creates the url for the call as well as the payload and headers
 
             :param **kwargs: requires at least method='name of method'
-            :return: response to the request in a json format 
+            :return: response to the request in a json format
 
             :Example:
 
@@ -141,7 +149,7 @@ class MrrApi(object):
         except:
             rental = False
         params = urlencode(param)
-        
+
         sign = self._signature(params)
 
         url = self.uri.format(self.define_url(param['method'], rental))
@@ -154,43 +162,114 @@ class MrrApi(object):
 
     # -- PUBLIC CALLS --------------------------
 
-    def rig_list(self, algo='scrypt', **kwargs):
+    def rig_list(self, algo, **kwargs):
+        '''
+            Gets the list of rigs
+            :param algo: algorithm of interest
+
+            :optional min_hash: minimum hashrate in MH
+            :optional max_hash: maximum hashrate in MH
+            :optional min_cost: minimum price per MH
+            :optional max_cost: maximum price per MH
+            :optional showoff: yes/no - show offline rigs - by default = no
+            :optional order: orders response by price/hashrate/minhrs/maxhrs/rating/name
+            :optional orderdir: requires order - orders by asc/desc
+            :optional page: 1-# - results of a given page
+        '''
         return self._post(method='list', type=algo, **kwargs)
 
-    def rig_detail(self, id):
-        return self._post(method='detail', id=id)
+    def rig_detail(self, rig_id):
+        '''
+            Returns the details of a rig
 
-    def rig_scrypt(self):
-        return self._post(method='list', type='scrypt')
+            :param: id - rig id
+        '''
+        return self._post(method='detail', id=rig_id)
 
     # -- RENTAL RELATED CALLS ---------------------------
+
     def my_rigs(self):
+        '''
+            Returns your rigs
+        '''
         return self._post(method='myrigs')
 
     def my_rentals(self):
+        '''
+            Returns your rentals
+        '''
         return self._post(method='myrentals')
 
-    def rental_details(self, id):
-        return self._post(method='detail', id=id, is_rental=True)
+    def rental_details(self, rig_id):
+        '''
+            Returns the details of a given rental
+            :param rig_id: id of the rig
+        '''
+        return self._post(method='detail', id=rig_id, is_rental=True)
 
     def update_rig(self, id, name=None, status=None, hashrate=None, hash_type=None, price=None, min_hours=None, max_hours=None):
+        '''
+            Updates the details of one of your rigs - Requires the ID and at least one more argument
+            :param id: id of the rig
+
+            :optional name: new name of the rig
+            :optional status: available/disabled
+            :optional hashrate: defaults to MHash (eg: 10 = 10 MHash)
+            :optional hash_type: used with 'hashrate' - If set replaces the factor for hashrate (kh, mh, gh, th)
+            :optional price: price in BTC per mhash per day
+            :optional min_hours: minimum rental length
+            :optional max_hours: maximum rental length
+        '''
         kwargs = locals()
 
         kwargs.pop('self')
-        kwargs = {k:v for k,v in kwargs.items() if v is not None}
+        kwargs = {k:v for k, v in kwargs.items() if v is not None}
         if len(kwargs) == 1:
             raise ValueError("This method requires id and at least 1 more argument to be used")
         else:
-            return self._post(method='update',**kwargs)
+            return self._post(method='update', **kwargs)
+
+        def rent(self, id, length, profileid):
+            '''
+                Rents a rig
+                :param id: id of the rig
+                :param length: length in hours of the rental
+                :param profileid: profile id - # pulled from the account profiles method
+            '''
+            return self._post(method='rent', length=length, profileid=profileid)
 
     # -- ACCOUNT RELATED CALLS --------------------------
     def get_balance(self):
+        '''
+            Returns the confirmed / unconfirmed BTC balance of the account
+
+            .. note :: apidocs don't mention LTC or ETH
+        '''
         return self._post(method='balance')
 
     def favorite_pools(self):
+        ''' 
+            Returns the account listed favorite pools
+
+        :Example:
+        >>> from mrr_api import MrrApi
+        >>> app  = MrrApi(apikey, apisecret)
+        >>> app.favorite_pools()
+         {'success': True, 'data': [{'workername':
+         'MjiJVx588Phk3hzrzyiiCRShSXAEtxKP6i', 'port': '3003',
+         'host':'magnetpool.io', 'name': 'magnet500', 'id': 95497, 'password':
+         ''}, 'version': '1'} 
+         
+         .. note: Also returns further informations about the pool, see example
+        '''
         return self._post(method='pools')
 
     def profiles(self):
+        '''
+            Returns the account saved profiles
+
+            :rtype: list of profiles
+        '''
         return self._post(method='profiles')
 
     # -- CUSTOM CALLS -----------------------------------
