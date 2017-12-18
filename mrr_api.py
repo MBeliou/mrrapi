@@ -5,12 +5,20 @@
                 The mrr_api module
 ================================================
 
-    Python wrapper for the mining rig rental API
+    Python wrapper for the mining rig rental website API
     https://www.miningrigrentals.com/apidoc
 
+     .. warning :: The miningrigrental API only returns errors for connection /
+     signature errors. All other failures seem to result in false positive with
+     Null values.
+
+     .. note :: ALGOS is only given as information, methods don't check if a
+     given alg is actually listed
+     
     .. todo :: Add remaining docstrings
                Write README.md
                Turn into a package
+               Add a listed_algos method
                
 '''
 
@@ -21,62 +29,18 @@ from urllib.parse import urlencode
 import requests
 
 
-RIG_METHODS = [
-    'list',
-    'detail',
-    'update',
-    'rent',
-]
+RIG_METHODS = ['list', 'detail', 'update', 'rent']
 
-RENTAL_METHODS = [
-    'detail'
-]
+RENTAL_METHODS = ['detail']
 
-ACCOUNT_METHODS = [
-    'myrigs',
-    'myrentals',
-    'balance',
-    'pools',
-    'profiles'
-]
+ACCOUNT_METHODS = ['myrigs', 'myrentals', 'balance', 'pools', 'profiles']
 
-ALGOS = [
-    'scrypt',
-    'sha256',
-    'x11',
-    'lbry',
-    'hashimotos',
-    'groestl',
-    'equihash',
-    'lyra2re',
-    'qubit',
-    'cryptonote',
-    # myriad-groestl,
-    # yescript,
-    'nscrypt',
-    'neoscrypt',
-    'nist5',
-    'pluck',
-    'quark',
-    'timetravel10',
-    'scryptjane',
-    'sha3',
-    'whirlpoolx',
-    'm7m',
-    'x13',
-    'x14',
-    'x15',
-    'blake2s',
-    'blake256',
-    'lyra2rev2',
-    'lyra2z',
-    'sia',
-    'x17',
-    'c11',
-    'skunk',
-    'hashimotog',
-    'hmq1725'
-]
+ALGOS = [ 'scrypt', 'sha256', 'x11', 'lbry', 'hashimotos', 'groestl',
+ 'equihash', 'lyra2re', 'qubit', 'cryptonote', # myriad-groestl, # yescript,
+ 'nscrypt', 'neoscrypt', 'nist5', 'pluck', 'quark', 'timetravel10',
+ 'scryptjane', 'sha3', 'whirlpoolx', 'm7m', 'x13', 'x14', 'x15', 'blake2s',
+ 'blake256', 'lyra2rev2', 'lyra2z', 'sia', 'x17', 'c11', 'skunk', 'hashimotog',
+ 'hmq1725' ]
 
 class MrrApi(object):
     def __init__(self, api_key, api_secret):
@@ -207,7 +171,8 @@ class MrrApi(object):
         '''
         return self._post(method='detail', id=rig_id, is_rental=True)
 
-    def update_rig(self, id, name=None, status=None, hashrate=None, hash_type=None, price=None, min_hours=None, max_hours=None):
+    def update_rig(self, id, name=None, status=None, hashrate=None,
+                    hash_type=None, price=None, min_hours=None, max_hours=None):
         '''
             Updates the details of one of your rigs - Requires the ID and at least one more argument
             :param id: id of the rig
@@ -215,7 +180,7 @@ class MrrApi(object):
             :optional name: new name of the rig
             :optional status: available/disabled
             :optional hashrate: defaults to MHash (eg: 10 = 10 MHash)
-            :optional hash_type: used with 'hashrate' - If set replaces the factor for hashrate (kh, mh, gh, th)
+            :optional hash_type: used with 'hashrate' - Replaces the hashrate factor (kh, mh, gh, th)
             :optional price: price in BTC per mhash per day
             :optional min_hours: minimum rental length
             :optional max_hours: maximum rental length
