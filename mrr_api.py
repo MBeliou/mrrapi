@@ -30,12 +30,12 @@ RENTAL_METHODS = ['detail']
 
 ACCOUNT_METHODS = ['myrigs', 'myrentals', 'balance', 'pools', 'profiles']
 
-ALGOS = [ 'scrypt', 'sha256', 'x11', 'lbry', 'hashimotos', 'groestl',
- 'equihash', 'lyra2re', 'qubit', 'cryptonote', # myriad-groestl, # yescript,
- 'nscrypt', 'neoscrypt', 'nist5', 'pluck', 'quark', 'timetravel10',
- 'scryptjane', 'sha3', 'whirlpoolx', 'm7m', 'x13', 'x14', 'x15', 'blake2s',
- 'blake256', 'lyra2rev2', 'lyra2z', 'sia', 'x17', 'c11', 'skunk', 'hashimotog',
- 'hmq1725' ]
+ALGOS = ['scrypt', 'sha256', 'x11', 'lbry', 'hashimotos', 'groestl',
+         'equihash', 'lyra2re', 'qubit', 'cryptonote', # myriad-groestl, # yescript,
+         'nscrypt', 'neoscrypt', 'nist5', 'pluck', 'quark', 'timetravel10',
+         'scryptjane', 'sha3', 'whirlpoolx', 'm7m', 'x13', 'x14', 'x15', 'blake2s',
+         'blake256', 'lyra2rev2', 'lyra2z', 'sia', 'x17', 'c11', 'skunk', 'hashimotog',
+         'hmq1725']
 
 class MrrApi(object):
     def __init__(self, api_key, api_secret):
@@ -63,7 +63,7 @@ class MrrApi(object):
         sign = hmac.new(self._api_secret.encode(), post_data.encode(), digestmod=hashlib.sha1).hexdigest()
         return sign
 
-    def define_url(self, method, is_rental=False):
+    def define_url(self, method, rental=False):
         '''
             Defines the url to be used
 
@@ -77,6 +77,9 @@ class MrrApi(object):
             .. note :: Method uses a is_rental Boolean to differenciate rig & rental 'detail' method
             .. raises :: Raises an error if the method is not yet implemented or does not exist
         '''
+        if rental is True:
+            return "rental?method="+method
+
         if method in RIG_METHODS:
             return "rig?method="+method
 
@@ -111,7 +114,7 @@ class MrrApi(object):
 
         sign = self._signature(params)
 
-        url = self.uri.format(self.define_url(param['method'], rental))
+        url = self.uri.format(self.define_url(param['method'], rental=rental))
 
         headers = {'x-api-key': self._api_key,
                    'x-api-sign': sign}
@@ -167,7 +170,7 @@ class MrrApi(object):
         return self._post(method='detail', id=id, is_rental=True)
 
     def update_rig(self, id, name=None, status=None, hashrate=None,
-                    hash_type=None, price=None, min_hours=None, max_hours=None):
+                   hash_type=None, price=None, min_hours=None, max_hours=None):
         '''
             Updates the details of one of your rigs - Requires the ID and at least one more argument
             :param id: id of the rig
@@ -208,7 +211,7 @@ class MrrApi(object):
         return self._post(method='balance')
 
     def favorite_pools(self):
-        ''' 
+        '''
             Returns the account listed favorite pools
 
         :Example:
@@ -218,8 +221,8 @@ class MrrApi(object):
          {'success': True, 'data': [{'workername':
          'MjiJVx588Phk3hzrzyiiCRShSXAEtxKP6i', 'port': '3003',
          'host':'magnetpool.io', 'name': 'magnet500', 'id': 95497, 'password':
-         ''}, 'version': '1'} 
-         
+         ''}, 'version': '1'}
+
          .. note: Also returns further informations about the pool, see example
         '''
         return self._post(method='pools')
