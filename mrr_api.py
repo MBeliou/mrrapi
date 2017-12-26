@@ -13,13 +13,8 @@
      Null values.
 
      .. note :: ALGOS is only given as information, methods don't check if a
-     given alg is actually listed
-     
-    .. todo :: Add remaining docstrings
-               Write README.md
-               Turn into a package
-               Add a listed_algos method
-               
+     given algo is actually listed.
+                    
 '''
 
 import time
@@ -142,13 +137,13 @@ class MrrApi(object):
         '''
         return self._post(method='list', type=algo, **kwargs)
 
-    def rig_detail(self, rig_id):
+    def rig_detail(self, id):
         '''
             Returns the details of a rig
 
             :param: id - rig id
         '''
-        return self._post(method='detail', id=rig_id)
+        return self._post(method='detail', id=id)
 
     # -- RENTAL RELATED CALLS ---------------------------
 
@@ -164,12 +159,12 @@ class MrrApi(object):
         '''
         return self._post(method='myrentals')
 
-    def rental_details(self, rig_id):
+    def rental_details(self, id):
         '''
             Returns the details of a given rental
-            :param rig_id: id of the rig
+            :param id: id of the rig
         '''
-        return self._post(method='detail', id=rig_id, is_rental=True)
+        return self._post(method='detail', id=id, is_rental=True)
 
     def update_rig(self, id, name=None, status=None, hashrate=None,
                     hash_type=None, price=None, min_hours=None, max_hours=None):
